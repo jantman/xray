@@ -4,8 +4,9 @@
 # Trigger it with: kill -QUIT <pid>
 #  
 trap "QUIT" do
+  fh = File.open("/tmp/xray_#$PID.trace", "a")
   if Kernel.respond_to? :caller_for_all_threads
-    STDERR.puts "\n=============== XRay - Thread Dump ==============="
+    fh.puts "\n=============== XRay - Thread Dump of PID #$PID at #{Time.now.inspect} ==============="
     caller_for_all_threads.each_pair do |thread, stack|
       thread_description = thread.inspect
       thread_description << " [main]" if thread == Thread.main
@@ -20,12 +21,13 @@ trap "QUIT" do
       full_description << "    #{stack.join("\n      \\_ ")}\n"
       
       # Single puts to avoid interleaved output
-      STDERR.puts full_description
+      fh.puts full_description
     end
   else
-    STDERR.puts "=============== XRay - Current Thread Backtrace ==============="
-    STDERR.puts "Current thread : #{Thread.inspect}"
-    STDERR.puts caller.join("\n    \\_ ")
+    fh.puts "=============== XRay - Current Thread Backtrace ==============="
+    fh.puts "Current thread : #{Thread.inspect}"
+    fh.puts caller.join("\n    \\_ ")
   end
-  STDERR.puts "\n=============== XRay - Done ===============\n"
+  fh.puts "\n=============== XRay - Done with PID #$PID ===============\n"
+  fh.close
 end
